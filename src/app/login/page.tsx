@@ -1,6 +1,15 @@
+import { redirect } from 'next/navigation';
+import { getCurrentUser } from '@/lib/auth/get-current-user';
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const user = await getCurrentUser();
+
+  // Redirect authenticated users to dashboard
+  if (user) {
+    redirect('/dashboard');
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
       <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-lg">
