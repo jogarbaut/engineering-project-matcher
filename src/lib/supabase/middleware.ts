@@ -2,6 +2,9 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import type { Database } from '@/types/database';
 
+const protectedRoutes = ['/dashboard', '/profile', '/teams'];
+const authRoutes = ['/login'];
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -29,7 +32,26 @@ export async function updateSession(request: NextRequest) {
   // Do not run code between createServerClient and supabase.auth.getUser().
   // A simple mistake could make it very hard to debug issues with users
   // being randomly logged out.
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Check route protection
+  const pathname = request.nextUrl.pathname;
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    pathname.startsWith(route),
+  );
+  const isAuthRoute = authRoutes.includes(pathname);
+
+  // Redirect unauthenticated users from protected routes
+  if (isProtectedRoute && !user) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  // Redirect authenticated users from auth routes
+  if (isAuthRoute && user) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
 
   return supabaseResponse;
 }
